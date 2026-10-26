@@ -15,7 +15,7 @@ mvn verify
 | `communs-arch-core` | Importador de bytecode (ASM) e modelo de classes, membros, dependências e anotações |
 | `communs-arch-lang` | DSL fluente `classes().that()...should()...` e avaliação de regras |
 | `communs-arch-library` | Regras padrão e o catálogo `RegrasRegistry` |
-| `communs-arch-junit` | Integração com JUnit 5 (`@AnalisarClasses`, `@RegraArch`) |
+| `communs-arch-junit` | Integração com JUnit 6 (`@AnalisarClasses`, `@RegraArch`) |
 | `communs-arch-runner` | CLI que roda o catálogo num projeto e gera relatório JSON |
 
 Cada módulo só depende dos que estão acima dele na tabela. Regras alternativas (internas) e a integração com chat entram em fases posteriores.

@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>communs-arch-junit</artifactId>
-    <description>Integração com JUnit 5: @AnalisarClasses e @RegraArch.</description>
+    <description>Integração com JUnit 6: @AnalisarClasses e @RegraArch.</description>
 
     <dependencies>
         <dependency>
