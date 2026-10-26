@@ -18,4 +18,18 @@ mvn verify
 | `communs-arch-junit` | Integração com JUnit 6 (`@AnalisarClasses`, `@RegraArch`) |
 | `communs-arch-runner` | CLI que roda o catálogo num projeto e gera relatório JSON |
 
-Cada módulo só depende dos que estão acima dele na tabela. Regras alternativas (internas) e a integração com chat entram em fases posteriores.
+Cada módulo só depende dos que estão acima dele na tabela.
+
+## Importando classes
+
+```java
+JavaClasses classes = new ClassFileImporter()
+        .withImportOption(ImportOption.DO_NOT_INCLUDE_TESTS)
+        .importPackages("com.exemplo.pedidos");
+
+JavaClass service = classes.get("com.exemplo.pedidos.PedidoService").orElseThrow();
+service.dependencies().forEach(d -> System.out.println(d.describe()));
+// com.exemplo.pedidos.PedidoService -> com.exemplo.pedidos.PedidoRepository [METHOD_CALL] (linha 18)
+```
+
+O importador também lê pastas de classes e JARs (`importPaths`) ou classes avulsas (`importClasses`). Regras alternativas (internas) e a integração com chat entram em fases posteriores.
