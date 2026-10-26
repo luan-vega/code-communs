@@ -149,6 +149,30 @@ class ClassFileImporterTest {
     }
 
     @Test
+    void resolveHierarquiaEClassesNaoImportadas() {
+        JavaClass repositorio = classe(PedidoRepositoryEmMemoria.class);
+
+        assertThat(repositorio.isAssignableTo(PedidoRepository.class)).isTrue();
+        assertThat(repositorio.isAssignableTo(Object.class)).isTrue();
+        assertThat(repositorio.isAssignableTo(PedidoService.class)).isFalse();
+        assertThat(classe(Status.class).isAssignableTo(Comparable.class)).as("Enum implementa Comparable, lido por reflexão").isTrue();
+
+        JavaClass lista = classes.resolve(List.class.getName());
+        assertThat(lista.isImported()).isFalse();
+        assertThat(lista.kind()).isEqualTo(JavaClassKind.INTERFACE);
+        assertThat(classes.resolve(PedidoService.class.getName())).isSameAs(classe(PedidoService.class));
+    }
+
+    @Test
+    void conheceQuemDependeDeCadaClasse() {
+        assertThat(classe(PedidoService.class).dependenciesToSelf())
+                .extracting(Dependency::originClassName)
+                .containsOnly(PedidoController.class.getName());
+        assertThat(classes.that(c -> c.simpleName().equals("PedidoService")).get(PedidoService.class).orElseThrow()
+                .dependenciesToSelf()).as("filtrar não perde o contexto").isNotEmpty();
+    }
+
+    @Test
     void naoRegistraDependenciaDaClasseParaElaMesma() {
         assertThat(classes).allSatisfy(javaClass ->
                 assertThat(javaClass.dependsOn(javaClass.name())).isFalse());

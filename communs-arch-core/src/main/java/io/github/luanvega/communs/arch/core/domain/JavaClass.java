@@ -21,6 +21,8 @@ public final class JavaClass {
     private final List<JavaMethod> methods;
     private final Set<Dependency> dependencies;
     private final String sourceFileName;
+    private final boolean imported;
+    private ClassResolver resolver;
 
     public JavaClass(
             String name,
@@ -33,6 +35,21 @@ public final class JavaClass {
             List<JavaMethod> methods,
             Set<Dependency> dependencies,
             String sourceFileName) {
+        this(name, kind, modifiers, superclassName, interfaceNames, annotations, fields, methods, dependencies, sourceFileName, true);
+    }
+
+    JavaClass(
+            String name,
+            JavaClassKind kind,
+            Set<JavaModifier> modifiers,
+            String superclassName,
+            List<String> interfaceNames,
+            List<JavaAnnotation> annotations,
+            List<JavaField> fields,
+            List<JavaMethod> methods,
+            Set<Dependency> dependencies,
+            String sourceFileName,
+            boolean imported) {
         this.name = Objects.requireNonNull(name, "name");
         this.kind = Objects.requireNonNull(kind, "kind");
         this.modifiers = Set.copyOf(modifiers);
@@ -43,6 +60,11 @@ public final class JavaClass {
         this.methods = List.copyOf(methods);
         this.dependencies = Set.copyOf(dependencies);
         this.sourceFileName = sourceFileName;
+        this.imported = imported;
+    }
+
+    void attach(ClassResolver resolver) {
+        this.resolver = resolver;
     }
 
     public String name() {
@@ -97,6 +119,50 @@ public final class JavaClass {
 
     public Optional<String> sourceFileName() {
         return Optional.ofNullable(sourceFileName);
+    }
+
+    /**
+     * {@code false} para classes que não foram importadas e só aparecem como alvo de dependências.
+     */
+    public boolean isImported() {
+        return imported;
+    }
+
+    /**
+     * Nomes de todas as superclasses e interfaces, diretas e indiretas.
+     * Usa as classes importadas e, para as demais, o classpath atual.
+     */
+    public Set<String> allSuperTypeNames() {
+        return resolver().allSuperTypeNames(name);
+    }
+
+    public boolean isAssignableTo(String typeName) {
+        return name.equals(typeName) || allSuperTypeNames().contains(typeName);
+    }
+
+    public boolean isAssignableTo(Class<?> type) {
+        return isAssignableTo(type.getName());
+    }
+
+    /**
+     * Resolve um nome de classe no mesmo conjunto desta: a classe importada ou uma classe só com o nome.
+     */
+    public JavaClass resolve(String className) {
+        return resolver().resolve(className);
+    }
+
+    /**
+     * Dependências de outras classes importadas no mesmo conjunto para esta.
+     */
+    public Set<Dependency> dependenciesToSelf() {
+        return resolver().dependenciesTo(name);
+    }
+
+    private ClassResolver resolver() {
+        if (resolver == null) {
+            resolver = new ClassResolver(java.util.Map.of(name, this));
+        }
+        return resolver;
     }
 
     public boolean isNested() {
