@@ -16,3 +16,23 @@ jobs:
           java-version: '21'
           cache: maven
       - run: mvn -B verify
+      - name: Regras de qualidade do próprio repositório
+        run: java -jar communs-arch-runner/target/communs-arch-runner-*-cli.jar --qualidade .
+
+  mutacao:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: mvn -B -Pmutacao verify
+      - name: Relatórios do PIT
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pit-reports
+          path: '*/target/pit-reports/'
+          if-no-files-found: ignore

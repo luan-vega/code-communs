@@ -15,7 +15,7 @@ import java.util.List;
  * CLI do catálogo de Regras.
  *
  * <pre>
- * java -jar communs-arch-runner-cli.jar --classes target/classes [--classes outro.jar]
+ * java -jar communs-arch-runner-cli.jar --classes target/classes [--classes outro.jar] [--qualidade .]
  *      [--config regras.yaml] [--json relatorio.json | --json -] [--falhar-em-avisos] [--incluir-testes]
  * </pre>
  *
@@ -28,9 +28,10 @@ public final class Main {
     static final int ERRO_DE_USO = 2;
 
     private static final String USO = """
-            Uso: java -jar communs-arch-runner-cli.jar --classes <pasta|jar> [opções]
+            Uso: java -jar communs-arch-runner-cli.jar --classes <pasta|jar> [--qualidade <projeto>] [opções]
 
               --classes <caminho>    pasta de classes compiladas ou JAR (pode repetir)
+              --qualidade <pasta>    verifica pom.xml/sonar-project.properties da pasta (regras QUALIDADE-xxx)
               --config <arquivo>     regras.yaml (padrão: ./regras.yaml, se existir)
               --json <arquivo|->     grava o relatório JSON no arquivo ou, com '-', na saída padrão
               --falhar-em-avisos     violações de AVISO também falham (o mesmo que falharEmAvisos: true)
@@ -50,6 +51,7 @@ public final class Main {
     static int executar(String[] args, PrintStream saida, PrintStream erros) {
         List<Path> classes = new ArrayList<>();
         Path config = null;
+        Path projeto = null;
         String json = null;
         boolean falharEmAvisos = false;
         boolean incluirTestes = false;
@@ -57,6 +59,7 @@ public final class Main {
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
                     case "--classes" -> classes.add(Path.of(valor(args, ++i, "--classes")));
+                    case "--qualidade" -> projeto = Path.of(valor(args, ++i, "--qualidade"));
                     case "--config" -> config = Path.of(valor(args, ++i, "--config"));
                     case "--json" -> json = valor(args, ++i, "--json");
                     case "--falhar-em-avisos" -> falharEmAvisos = true;
@@ -68,8 +71,11 @@ public final class Main {
                     default -> throw new IllegalArgumentException("Opção desconhecida: " + args[i]);
                 }
             }
-            if (classes.isEmpty()) {
-                throw new IllegalArgumentException("Informe ao menos um --classes");
+            if (classes.isEmpty() && projeto == null) {
+                throw new IllegalArgumentException("Informe ao menos um --classes ou o --qualidade");
+            }
+            if (projeto != null && !Files.isDirectory(projeto)) {
+                throw new IllegalArgumentException("Pasta do projeto não existe: " + projeto);
             }
             for (Path caminho : classes) {
                 if (!Files.exists(caminho)) {
@@ -81,8 +87,8 @@ public final class Main {
                 configuracao = configuracao.toBuilder().falharEmAvisos(true).build();
             }
 
-            Relatorio relatorio = new Runner().executar(classes, configuracao, incluirTestes);
-            if (relatorio.classesAnalisadas() == 0) {
+            Relatorio relatorio = new Runner().executar(classes, projeto, configuracao, incluirTestes);
+            if (!classes.isEmpty() && relatorio.classesAnalisadas() == 0) {
                 throw new IllegalArgumentException("Nenhuma classe encontrada em " + classes
                         + (incluirTestes ? "" : " (classes de teste só entram com --incluir-testes)"));
             }
