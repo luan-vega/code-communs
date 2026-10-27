@@ -14,17 +14,37 @@ import java.util.stream.Stream;
 public final class JavaClasses implements Iterable<JavaClass> {
 
     private final Map<String, JavaClass> byName;
+    private final ClassResolver resolver;
 
-    private JavaClasses(Map<String, JavaClass> byName) {
+    private JavaClasses(Map<String, JavaClass> byName, ClassResolver resolver) {
         this.byName = byName;
+        this.resolver = resolver;
     }
 
+    /**
+     * Cria o conjunto e liga cada classe a ele, para resolver hierarquias e dependências.
+     */
     public static JavaClasses of(Collection<JavaClass> classes) {
+        Map<String, JavaClass> byName = sortedByName(classes);
+        ClassResolver resolver = new ClassResolver(byName);
+        byName.values().forEach(javaClass -> javaClass.attach(resolver));
+        return new JavaClasses(byName, resolver);
+    }
+
+    private static Map<String, JavaClass> sortedByName(Collection<JavaClass> classes) {
         Map<String, JavaClass> byName = new LinkedHashMap<>();
         classes.stream()
                 .sorted((a, b) -> a.name().compareTo(b.name()))
                 .forEach(javaClass -> byName.putIfAbsent(javaClass.name(), javaClass));
-        return new JavaClasses(byName);
+        return byName;
+    }
+
+    /**
+     * Devolve a classe importada com esse nome ou, se ela não foi importada, uma classe só com o nome
+     * ({@link JavaClass#isImported()} {@code false}). Útil para avaliar o alvo de dependências.
+     */
+    public JavaClass resolve(String name) {
+        return resolver.resolve(name);
     }
 
     public Optional<JavaClass> get(String name) {
@@ -43,8 +63,11 @@ public final class JavaClasses implements Iterable<JavaClass> {
         return contain(type.getName());
     }
 
+    /**
+     * Filtra as classes. O resultado continua resolvendo hierarquias e dependências pelo conjunto original.
+     */
     public JavaClasses that(Predicate<? super JavaClass> predicate) {
-        return of(stream().filter(predicate).toList());
+        return new JavaClasses(sortedByName(stream().filter(predicate).toList()), resolver);
     }
 
     public int size() {
