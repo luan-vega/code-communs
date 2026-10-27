@@ -27,6 +27,7 @@ public final class ConfiguracaoRegras {
     private final String pacoteRaiz;
     private final String excecaoBase;
     private final Set<String> regrasDesligadas;
+    private final boolean falharEmAvisos;
 
     private ConfiguracaoRegras(Builder builder) {
         this.pacoteController = builder.pacoteController;
@@ -37,6 +38,7 @@ public final class ConfiguracaoRegras {
         this.pacoteRaiz = builder.pacoteRaiz;
         this.excecaoBase = builder.excecaoBase;
         this.regrasDesligadas = Set.copyOf(builder.regrasDesligadas);
+        this.falharEmAvisos = builder.falharEmAvisos;
     }
 
     public static ConfiguracaoRegras padrao() {
@@ -57,6 +59,7 @@ public final class ConfiguracaoRegras {
         builder.pacoteRaiz = pacoteRaiz;
         builder.excecaoBase = excecaoBase;
         builder.regrasDesligadas = new HashSet<>(regrasDesligadas);
+        builder.falharEmAvisos = falharEmAvisos;
         return builder;
     }
 
@@ -98,6 +101,24 @@ public final class ConfiguracaoRegras {
         return regrasDesligadas.contains(idRegra);
     }
 
+    public Set<String> regrasDesligadas() {
+        return regrasDesligadas;
+    }
+
+    /**
+     * Se violações de Regras com severidade {@link Severidade#AVISO} também devem falhar o teste ou o build.
+     */
+    public boolean falharEmAvisos() {
+        return falharEmAvisos;
+    }
+
+    /**
+     * {@code true} quando as violações deste resultado devem falhar o teste ou o build.
+     */
+    public boolean deveFalhar(ResultadoRegra resultado) {
+        return resultado.temViolacoes() && (resultado.regra().severidade() == Severidade.ERRO || falharEmAvisos);
+    }
+
     public static final class Builder {
 
         private String pacoteController = "..controller..";
@@ -108,6 +129,7 @@ public final class ConfiguracaoRegras {
         private String pacoteRaiz;
         private String excecaoBase;
         private Set<String> regrasDesligadas = new HashSet<>();
+        private boolean falharEmAvisos;
 
         private Builder() {
         }
@@ -149,6 +171,11 @@ public final class ConfiguracaoRegras {
 
         public Builder desligar(String... idsRegras) {
             this.regrasDesligadas.addAll(Set.of(idsRegras));
+            return this;
+        }
+
+        public Builder falharEmAvisos(boolean falhar) {
+            this.falharEmAvisos = falhar;
             return this;
         }
 

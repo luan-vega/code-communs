@@ -18,5 +18,9 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>communs-arch-lang</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
     </dependencies>
 </project>
