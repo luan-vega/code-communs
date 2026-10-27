@@ -88,3 +88,64 @@ List<ResultadoRegra> resultados = RegrasRegistry.padrao().avaliar(classes, confi
 ```
 
 As Regras comparam anotações e tipos do Spring e do JPA pelo nome, então a lib não depende desses frameworks. Regras alternativas entram implementando `ProvedorDeRegras` e registrando a classe em `META-INF/services/io.github.luanvega.communs.arch.library.ProvedorDeRegras`.
+
+## Configuração com `regras.yaml`
+
+A mesma configuração pode vir de um arquivo, lido pela integração com JUnit e pela CLI:
+
+```yaml
+pacoteRaiz: com.exemplo.pedidos
+excecaoBase: com.exemplo.pedidos.domain.ErroDeNegocio
+camadas:
+  controller: "..controller.."
+  service: "..service.."
+  repository: "..repository.."
+  dominio: "..domain.."
+  infra: ["..infra..", "..adapters.."]
+desligar: [NOMES-003]
+falharEmAvisos: false
+```
+
+Todas as chaves são opcionais; chaves desconhecidas dão erro, para um erro de digitação não desligar nada em silêncio. Em código: `LeitorDeConfiguracao.ler(Path.of("regras.yaml"))`.
+
+## Testes com JUnit 6
+
+Adicione `communs-arch-junit` com escopo `test`. A lib registra uma engine própria na JUnit Platform (`communs-arch`), que roda junto com o Jupiter no Surefire:
+
+```java
+@AnalisarClasses(pacotesDe = PedidosApplication.class, regrasPadrao = true)
+class ArquiteturaTest {
+
+    @RegraArch
+    static final ArchRule semControllerNoRepositorio = noClasses().that().resideInAPackage("..controller..")
+            .should().accessClassesThat().resideInAPackage("..repository..");
+
+    @RegraArch
+    void regraEmCodigo(JavaClasses classes) {
+        // qualquer verificação; uma exceção falha o teste
+    }
+}
+```
+
+- As classes são importadas uma vez por conjunto de pacotes e reaproveitadas entre as classes de teste.
+- `regrasPadrao = true` vira um teste por Regra do catálogo (`CAMADAS-001`, `SPRING-001`...), configuradas pelo `regras.yaml` do classpath de teste (ou pelo arquivo em `configuracao`).
+- Violação de Regra de AVISO aparece como teste abortado, não como falha, a menos que `falharEmAvisos: true`. Regra desligada ou sem configuração aparece abortada com o motivo.
+- `incluirTestes = true` também analisa as classes de teste.
+
+## CLI e relatório JSON
+
+`communs-arch-runner` gera um JAR executável (`communs-arch-runner-<versão>-cli.jar`) para rodar o catálogo sem escrever testes, por exemplo no CI:
+
+```bash
+java -jar communs-arch-runner-0.1.0-SNAPSHOT-cli.jar --classes target/classes --config regras.yaml --json relatorio.json
+```
+
+| Opção | |
+| --- | --- |
+| `--classes <pasta\|jar>` | classes compiladas a analisar (pode repetir) |
+| `--config <arquivo>` | `regras.yaml` (padrão: `./regras.yaml`, se existir) |
+| `--json <arquivo\|->` | grava o relatório JSON no arquivo ou, com `-`, na saída padrão |
+| `--falhar-em-avisos` | violações de AVISO também falham |
+| `--incluir-testes` | analisa também classes de teste |
+
+Saída 0 quando nada falhou, 1 quando alguma Regra falhou e 2 em erro de uso ou de configuração. O JSON traz um `resumo` (regras aprovadas, violadas, ignoradas, total de violações, `falhou`) e, por Regra, `id`, `severidade`, `status` (`APROVADA`, `VIOLADA` ou `IGNORADA`), `falha`, `motivo` e as `violacoes` com `mensagem`, `classe` e `linha`. É o formato que a integração com chat vai consumir. Em Java, o mesmo relatório sai de `new Runner().executar(caminhos, configuracao, incluirTestes)`.

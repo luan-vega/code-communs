@@ -16,12 +16,32 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>communs-arch-lang</artifactId>
+            <artifactId>communs-arch-library</artifactId>
+        </dependency>
+        <!-- Engine própria do JUnit Platform (como o archunit-junit5), para rodar campos @RegraArch como testes. -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-engine</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>provided</scope>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-testkit</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- As classes de exemplo dos testes violam regras de propósito; elas rodam só pelo EngineTestKit. -->
+                    <excludeJUnit5Engines>
+                        <excludeJUnit5Engine>communs-arch</excludeJUnit5Engine>
+                    </excludeJUnit5Engines>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
