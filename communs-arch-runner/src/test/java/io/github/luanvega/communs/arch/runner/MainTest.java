@@ -146,11 +146,55 @@ class MainTest {
     }
 
     @Test
+    void qualidadeSozinhaVerificaOProjeto() throws IOException {
+        Path projeto = projetoComToken();
+
+        int codigo = executar("--qualidade", projeto.toString());
+
+        assertThat(codigo).isEqualTo(Main.FALHOU);
+        assertThat(saida())
+                .doesNotContain("classes analisadas")
+                .contains("Qualidade: " + projeto, "ERRO  QUALIDADE-001", "sonar.token", "AVISO QUALIDADE-005");
+    }
+
+    @Test
+    void qualidadeEArquiteturaNoMesmoJson() throws IOException {
+        Path projeto = projetoComToken();
+
+        int codigo = executar("--classes", comAviso.toString(), "--qualidade", projeto.toString(), "--json", "-");
+
+        assertThat(codigo).isEqualTo(Main.FALHOU);
+        assertThat(saida())
+                .contains("\"id\": \"CODIGO-001\"")
+                .contains("\"qualidade\": {")
+                .contains("\"id\": \"QUALIDADE-001\"")
+                .contains("\"mensagem\": \"sonar.token est\\u00e1 com valor fixo em pom.xml");
+    }
+
+    @Test
+    void regraDeQualidadeDesligadaNoRegrasYaml() throws IOException {
+        Path projeto = projetoComToken();
+        Path config = pasta.resolve("sem-token.yaml");
+        Files.writeString(config, "desligar: [QUALIDADE-001, QUALIDADE-002]\n");
+
+        int codigo = executar("--qualidade", projeto.toString(), "--config", config.toString());
+
+        assertThat(codigo).isEqualTo(Main.OK);
+        assertThat(saida()).contains("--    QUALIDADE-001", "--    QUALIDADE-002", "Resultado: OK");
+    }
+
+    @Test
+    void pastaDoProjetoInexistenteEhErroDeUso() {
+        assertThat(executar("--qualidade", pasta.resolve("nao-existe").toString())).isEqualTo(Main.ERRO_DE_USO);
+        assertThat(erros()).contains("Pasta do projeto não existe");
+    }
+
+    @Test
     void semClassesEhErroDeUso() {
         int codigo = executar("--json", "-");
 
         assertThat(codigo).isEqualTo(Main.ERRO_DE_USO);
-        assertThat(erros()).contains("Informe ao menos um --classes", "Uso:");
+        assertThat(erros()).contains("Informe ao menos um --classes ou o --qualidade", "Uso:");
     }
 
     @Test
@@ -175,6 +219,16 @@ class MainTest {
     void ajuda() {
         assertThat(executar("--ajuda")).isEqualTo(Main.OK);
         assertThat(saida()).contains("--falhar-em-avisos");
+    }
+
+    private static Path projetoComToken() throws IOException {
+        Path projeto = Files.createDirectories(pasta.resolve("projeto-" + System.nanoTime()));
+        Files.writeString(projeto.resolve("pom.xml"), """
+                <project>
+                    <properties><sonar.token>squ_123</sonar.token></properties>
+                </project>
+                """);
+        return projeto;
     }
 
     private int executar(String... args) {

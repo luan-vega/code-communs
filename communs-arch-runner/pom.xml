@@ -18,6 +18,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>communs-arch-library</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>communs-arch-qualidade</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
