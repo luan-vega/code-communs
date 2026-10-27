@@ -171,7 +171,7 @@ public final class ClassConditions {
     }
 
     private static ConditionEvent dependencyEvent(JavaClass origin, Dependency dependency, boolean violation, String verb) {
-        String message = "Class <" + origin.name() + "> " + verb + " <" + dependency.targetClassName() + "> ["
+        String message = "Class <" + origin.name() + "> " + verb + " <" + dependency.target() + "> ["
                 + dependency.type() + "]" + location(origin, dependency.lineNumber());
         return new ConditionEvent(violation, message, origin.name(), dependency.lineNumber());
     }

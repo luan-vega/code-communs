@@ -71,6 +71,10 @@ public final class ClassesShould {
         return be(ClassPredicates.areAssignableTo(type).as("assignable to " + type.getName()));
     }
 
+    public ClassesShouldConjunction beAssignableTo(String typeName) {
+        return be(ClassPredicates.areAssignableTo(typeName).as("assignable to " + typeName));
+    }
+
     public ClassesShouldConjunction beInterfaces() {
         return be(ClassPredicates.areInterfaces().as("interfaces"));
     }

@@ -42,7 +42,7 @@ class ArchRuleDefinitionTest {
                 "classes that reside in a package '..controller..' should only depend on classes that "
                         + "reside in any package ['..controller..', '..service..', '..domain..', 'java..']");
         assertThat(resultado.violations()).extracting(ConditionEvent::message).contains(
-                "Class <" + APP + ".controller.RelatorioController> depends on <" + APP + ".repository.PedidoRepository> "
+                "Class <" + APP + ".controller.RelatorioController> depends on <" + APP + ".repository.PedidoRepository.buscar> "
                         + "[METHOD_CALL] in (RelatorioController.java:13)");
         assertThat(resultado.violations()).allMatch(v -> v.className().endsWith("RelatorioController"));
         // A anotação @Injetar fica no pacote raiz e também é uma dependência fora das camadas permitidas.

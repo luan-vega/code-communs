@@ -134,7 +134,16 @@ class ClassFileImporterTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(chamadaAoRepositorio.lineNumber()).isPositive();
-        assertThat(chamadaAoRepositorio.describe()).contains("(linha ");
+        assertThat(chamadaAoRepositorio.targetMemberName()).isEqualTo("buscar");
+        assertThat(chamadaAoRepositorio.describe()).contains(PedidoRepository.class.getName() + ".buscar [METHOD_CALL] (linha ");
+
+        assertThat(service.dependencies()).anySatisfy(d -> {
+            assertThat(d.type()).isEqualTo(DependencyType.FIELD_ACCESS);
+            assertThat(d.target()).isEqualTo(BigDecimal.class.getName() + ".ZERO");
+        });
+        assertThat(service.dependencies())
+                .filteredOn(d -> d.type() == DependencyType.FIELD_TYPE)
+                .allSatisfy(d -> assertThat(d.targetMemberName()).isEmpty());
     }
 
     @Test
@@ -146,6 +155,7 @@ class ClassFileImporterTest {
                 .orElseThrow();
 
         assertThat(referencia.lineNumber()).isPositive();
+        assertThat(referencia.targetMemberName()).isEqualTo("id");
     }
 
     @Test
