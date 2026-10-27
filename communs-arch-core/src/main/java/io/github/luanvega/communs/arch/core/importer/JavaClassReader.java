@@ -151,12 +151,12 @@ final class JavaClassReader extends ClassVisitor {
                 DependencyType type = JavaMethod.CONSTRUCTOR_NAME.equals(calledName)
                         ? DependencyType.CONSTRUCTOR_CALL
                         : DependencyType.METHOD_CALL;
-                addTypeDependency(Type.getObjectType(owner), type, currentLine);
+                addTypeDependency(Type.getObjectType(owner), type, currentLine, calledName);
             }
 
             @Override
             public void visitFieldInsn(int opcode, String owner, String fieldName, String fieldDescriptor) {
-                addTypeDependency(Type.getObjectType(owner), DependencyType.FIELD_ACCESS, currentLine);
+                addTypeDependency(Type.getObjectType(owner), DependencyType.FIELD_ACCESS, currentLine, fieldName);
             }
 
             @Override
@@ -194,7 +194,7 @@ final class JavaClassReader extends ClassVisitor {
                         DependencyType type = JavaMethod.CONSTRUCTOR_NAME.equals(handle.getName())
                                 ? DependencyType.CONSTRUCTOR_CALL
                                 : DependencyType.METHOD_CALL;
-                        addTypeDependency(Type.getObjectType(handle.getOwner()), type, currentLine);
+                        addTypeDependency(Type.getObjectType(handle.getOwner()), type, currentLine, handle.getName());
                     }
                 }
             }
@@ -219,15 +219,23 @@ final class JavaClassReader extends ClassVisitor {
     }
 
     private void addTypeDependency(Type type, DependencyType dependencyType, int lineNumber) {
+        addTypeDependency(type, dependencyType, lineNumber, "");
+    }
+
+    private void addTypeDependency(Type type, DependencyType dependencyType, int lineNumber, String memberName) {
         Type elementType = type.getSort() == Type.ARRAY ? type.getElementType() : type;
         if (elementType.getSort() == Type.OBJECT) {
-            addDependency(elementType.getClassName(), dependencyType, lineNumber);
+            addDependency(elementType.getClassName(), dependencyType, lineNumber, memberName);
         }
     }
 
     private void addDependency(String targetClassName, DependencyType type, int lineNumber) {
+        addDependency(targetClassName, type, lineNumber, "");
+    }
+
+    private void addDependency(String targetClassName, DependencyType type, int lineNumber, String memberName) {
         if (!targetClassName.equals(name)) {
-            dependencies.add(new Dependency(name, targetClassName, type, lineNumber));
+            dependencies.add(new Dependency(name, targetClassName, type, lineNumber, memberName));
         }
     }
 
